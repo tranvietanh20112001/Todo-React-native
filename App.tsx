@@ -1,118 +1,155 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+// App.tsx
+import React, {useState} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  FlatList,
+  TextInput,
+  Button,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+type Task = {
+  id: number;
+  name: string;
+};
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskName, setTaskName] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  // Add a new task
+  const addTask = () => {
+    if (!taskName.trim()) {
+      Alert.alert('Error', 'Please enter a task name.');
+      return;
+    }
+    const newTask = {id: Date.now(), name: taskName};
+    setTasks([...tasks, newTask]);
+    setTaskName('');
   };
 
+  // Edit an existing task
+  const editTask = () => {
+    if (!taskName.trim()) {
+      Alert.alert('Error', 'Please enter a task name.');
+      return;
+    }
+    setTasks(
+      tasks.map(task =>
+        task.id === editingTaskId ? {...task, name: taskName} : task,
+      ),
+    );
+    setTaskName('');
+    setEditingTaskId(null);
+  };
+
+  // Set a task for editing
+  const startEditing = (task: Task) => {
+    setTaskName(task.name);
+    setEditingTaskId(task.id);
+  };
+
+  // Delete a task
+  const deleteTask = (taskId: number) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+  };
+
+  // Render a task item
+  const renderItem = ({item}: {item: Task}) => (
+    <View style={styles.taskItem}>
+      <Text style={styles.taskText}>{item.name}</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          onPress={() => startEditing(item)}
+          style={styles.actionButton}>
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => deleteTask(item.id)}
+          style={styles.actionButton}>
+          <Text style={styles.actionText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Task Manager</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter task name"
+        value={taskName}
+        onChangeText={setTaskName}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <Button
+        title={editingTaskId !== null ? 'Update Task' : 'Add Task'}
+        onPress={editingTaskId !== null ? editTask : addTask}
+      />
+      <FlatList
+        data={tasks}
+        renderItem={renderItem}
+        keyExtractor={item => item.id.toString()}
+        style={styles.taskList}
+      />
     </SafeAreaView>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    fontSize: 18,
+  },
+  taskList: {
+    marginTop: 20,
+  },
+  taskItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  taskText: {
+    fontSize: 18,
+  },
+  actions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    marginLeft: 10,
+    padding: 5,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+  },
+  actionText: {
+    color: '#fff',
+  },
+});
